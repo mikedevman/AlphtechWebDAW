@@ -1,85 +1,135 @@
 import { useState, useEffect, useRef } from 'react';
-import { SonarControlBar } from './components/SonarControlBar';
-import { ProChannel } from './components/ProChannel';
-import { TrackView } from './components/TrackView';
-import { MasterConsole } from './components/MasterConsole';
+import { ControlPanel } from './components/ControlPanel';
+import { TrackNavigator } from './components/TrackNavigator';
+import { TrackItem } from './components/TrackItem';
+import { TrackTimeline } from './components/TrackTimeline';
+import { GuitarAmpPlugin } from './components/GuitarAmpPlugin';
 import { DawAudioEngine } from './dsp/DawAudioEngine';
-import type { InputSourceType, MeterLevels } from './dsp/DawAudioEngine';
-import type { TubeMode } from './dsp/TubeShaper';
-import { FACTORY_PRESETS } from './dsp/presets';
-import type { PreampPreset } from './dsp/presets';
+import type { TrackData, TrackAmpSettings } from './dsp/DawAudioEngine';
+
+const DEFAULT_AMP_SETTINGS: TrackAmpSettings = {
+  enabled: true,
+  mode: 'crunch',
+  drive: 8.5,
+  trimDb: 2.0,
+  bassDb: 1.5,
+  midDb: 2.0,
+  trebleDb: 2.0,
+  masterDb: 0,
+};
+
+const INITIAL_TRACKS: TrackData[] = [
+  {
+    id: 'track-1',
+    number: 1,
+    name: 'Track 1',
+    inputSource: 'di-stem',
+    outputBus: 'Master',
+    isMuted: false,
+    isSolo: false,
+    isArmed: true,
+    isInputEcho: true,
+    volume: 0.85,
+    hasAmpPlugin: true,
+    ampSettings: { ...DEFAULT_AMP_SETTINGS },
+    meterDb: -60,
+  },
+  {
+    id: 'track-2',
+    number: 2,
+    name: 'Track 2',
+    inputSource: 'none',
+    outputBus: 'Master',
+    isMuted: false,
+    isSolo: false,
+    isArmed: false,
+    isInputEcho: false,
+    volume: 0.85,
+    hasAmpPlugin: false,
+    ampSettings: { ...DEFAULT_AMP_SETTINGS, enabled: false },
+    meterDb: -60,
+  },
+  {
+    id: 'track-3',
+    number: 3,
+    name: 'Track 3',
+    inputSource: 'none',
+    outputBus: 'Master',
+    isMuted: false,
+    isSolo: false,
+    isArmed: false,
+    isInputEcho: false,
+    volume: 0.85,
+    hasAmpPlugin: false,
+    ampSettings: { ...DEFAULT_AMP_SETTINGS, enabled: false },
+    meterDb: -60,
+  },
+  {
+    id: 'track-4',
+    number: 4,
+    name: 'Track 4',
+    inputSource: 'none',
+    outputBus: 'Master',
+    isMuted: false,
+    isSolo: false,
+    isArmed: false,
+    isInputEcho: false,
+    volume: 0.85,
+    hasAmpPlugin: false,
+    ampSettings: { ...DEFAULT_AMP_SETTINGS, enabled: false },
+    meterDb: -60,
+  },
+];
 
 export function App() {
   const engine = useRef(DawAudioEngine.getInstance()).current;
+
+  // Track State
+  const [tracks, setTracks] = useState<TrackData[]>(INITIAL_TRACKS);
+  const [selectedTrackId, setSelectedTrackId] = useState<string>('track-1');
+  const [activePluginTrackId, setActivePluginTrackId] = useState<string | null>(null);
 
   // Transport State
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isLooping, setIsLooping] = useState(true);
-  const [isEngineActive, setIsEngineActive] = useState(false);
   const [timecode, setTimecode] = useState('00:00:00.00');
   const [measureBeatTick, setMeasureBeatTick] = useState('001:01:000');
   const [playheadPos, setPlayheadPos] = useState(0);
 
-  // Track & DSP State
-  const [inputSource, setInputSource] = useState<InputSourceType>('di-stem');
-  const [isMuted, setIsMuted] = useState(false);
-  const [isSolo, setIsSolo] = useState(false);
-  const [isArmed, setIsArmed] = useState(true);
-  const [isInputEcho, setIsInputEcho] = useState(true);
-  const [channelVol, setChannelVol] = useState(0.85);
-  const [pan, setPan] = useState(0);
-
-  // ProChannel DSP State
-  const [tubeMode, setTubeMode] = useState<TubeMode>('crunch');
-  const [drive, setDrive] = useState(7.5);
-  const [trimDb, setTrimDb] = useState(2.0);
-  const [bassDb, setBassDb] = useState(1.5);
-  const [midDb, setMidDb] = useState(2.5);
-  const [trebleDb, setTrebleDb] = useState(1.5);
-  const [masterDb, setMasterDb] = useState(-1.0);
-
-  // Presets & Metering
-  const [currentPresetId, setCurrentPresetId] = useState('british-crunch');
-  const [meterLevels, setMeterLevels] = useState<MeterLevels>({
-    peakDb: -60,
-    rmsDb: -60,
-    isClipping: false,
-  });
-
   const startTimeRef = useRef(0);
-  const loopDuration = 6.0; // 6-second guitar loop
+  const loopDuration = 6.0;
 
-  // Audio Engine polling loop
+  // Real-time Audio Polling & Playhead animation
   useEffect(() => {
     let animId: number;
 
     const tick = () => {
-      if (engine.ctx && engine.ctx.state === 'running') {
-        setIsEngineActive(true);
-      } else {
-        setIsEngineActive(false);
-      }
-
-      setMeterLevels(engine.getMeterLevels());
+      // Update per-track meters
+      setTracks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          meterDb: engine.isPlaying ? engine.getTrackMeterDb(t.id) : -60,
+        }))
+      );
 
       if (engine.isPlaying) {
-        const elapsedSec = (Date.now() - startTimeRef.current) / 1000;
-        const currentLoopSec = elapsedSec % loopDuration;
+        const elapsed = (Date.now() - startTimeRef.current) / 1000;
+        const currentLoopSec = elapsed % loopDuration;
 
-        // Playhead percentage across grid (0% to 100%)
-        setPlayheadPos((currentLoopSec / loopDuration) * 85); // 85% matches clip width
+        // Playhead position percentage across timeline (0 to 85% matches audio clip)
+        setPlayheadPos((currentLoopSec / loopDuration) * 85);
 
-        // Timecode: HH:MM:SS.ms
-        const mins = Math.floor(elapsedSec / 60);
-        const secs = Math.floor(elapsedSec % 60);
-        const ms = Math.floor((elapsedSec * 100) % 100);
+        // SMPTE Timecode
+        const mins = Math.floor(elapsed / 60);
+        const secs = Math.floor(elapsed % 60);
+        const ms = Math.floor((elapsed * 100) % 100);
         setTimecode(
           `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`
         );
 
-        // Calculate Measures, Beats, Ticks at 110 BPM (approx 2.18s per 4/4 measure)
-        const beatsTotal = (elapsedSec * (110 / 60));
+        // 110 BPM Measure : Beat : Tick
+        const beatsTotal = elapsed * (110 / 60);
         const measure = Math.floor(beatsTotal / 4) + 1;
         const beat = (Math.floor(beatsTotal) % 4) + 1;
         const tickVal = Math.floor((beatsTotal % 1) * 960);
@@ -97,14 +147,22 @@ export function App() {
     return () => cancelAnimationFrame(animId);
   }, [engine]);
 
+  // Synchronize audio engine when tracks change
+  useEffect(() => {
+    tracks.forEach((track) => {
+      engine.registerTrack(track);
+      engine.updateTrackDsp(track);
+    });
+  }, [tracks, engine]);
+
   // Transport Handlers
   const handlePlay = async () => {
     try {
-      await engine.play();
+      await engine.play(tracks);
       setIsPlaying(true);
       startTimeRef.current = Date.now();
     } catch (err) {
-      console.error('Play failed:', err);
+      console.error('Play error:', err);
     }
   };
 
@@ -121,84 +179,69 @@ export function App() {
     startTimeRef.current = Date.now();
   };
 
-  const handleEngineToggle = async () => {
-    if (!engine.ctx) {
-      await engine.initAudio();
-      setIsEngineActive(true);
-    } else if (engine.ctx.state === 'running') {
-      await engine.ctx.suspend();
-      setIsEngineActive(false);
-    } else {
-      await engine.ctx.resume();
-      setIsEngineActive(true);
-    }
+  // Track Management: Add Track
+  const handleAddTrack = () => {
+    const nextNumber = tracks.length > 0 ? Math.max(...tracks.map((t) => t.number)) + 1 : 1;
+    const newTrack: TrackData = {
+      id: `track-${Date.now()}`,
+      number: nextNumber,
+      name: `Track ${nextNumber}`,
+      inputSource: 'none',
+      outputBus: 'Master',
+      isMuted: false,
+      isSolo: false,
+      isArmed: false,
+      isInputEcho: false,
+      volume: 0.85,
+      hasAmpPlugin: false,
+      ampSettings: { ...DEFAULT_AMP_SETTINGS, enabled: false },
+      meterDb: -60,
+    };
+    setTracks((prev) => [...prev, newTrack]);
+    setSelectedTrackId(newTrack.id);
   };
 
-  const handleSourceChange = async (source: InputSourceType) => {
-    try {
-      await engine.setInputSource(source);
-      setInputSource(source);
-      if (source === 'hardware-interface') {
-        setIsPlaying(true);
-        startTimeRef.current = Date.now();
-      } else {
-        setIsPlaying(false);
+  // Track Management: Remove Selected Track
+  const handleRemoveTrack = (trackIdToRemove?: string) => {
+    const targetId = trackIdToRemove || selectedTrackId;
+    if (tracks.length <= 1) {
+      alert('Project must have at least one track.');
+      return;
+    }
+    engine.unregisterTrack(targetId);
+    setTracks((prev) => {
+      const remaining = prev.filter((t) => t.id !== targetId);
+      if (selectedTrackId === targetId) {
+        setSelectedTrackId(remaining[0]?.id || '');
       }
-    } catch (err) {
-      alert('Could not access audio interface/microphone. Please check browser permissions.');
-    }
+      return remaining;
+    });
   };
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      await engine.loadUserAudioFile(file);
-      setInputSource('audio-file');
-      await handlePlay();
-    } catch {
-      alert('Failed to load audio file. Please use a standard WAV or MP3.');
-    }
+  // Update specific track data
+  const handleUpdateTrack = (trackId: string, updated: Partial<TrackData>) => {
+    setTracks((prev) =>
+      prev.map((t) => {
+        if (t.id === trackId) {
+          const nextTrack = { ...t, ...updated };
+          engine.updateTrackDsp(nextTrack);
+          return nextTrack;
+        }
+        return t;
+      })
+    );
   };
 
-  const handleSelectPreset = (p: PreampPreset) => {
-    setCurrentPresetId(p.id);
-    setTubeMode(p.mode);
-    setDrive(p.drive);
-    setTrimDb(p.trimDb);
-    setBassDb(p.bassDb);
-    setMidDb(p.midDb);
-    setTrebleDb(p.trebleDb);
-    setMasterDb(p.masterDb);
-
-    engine.setDrive(p.drive, p.mode);
-    engine.setTrimDb(p.trimDb);
-    engine.setBassDb(p.bassDb);
-    engine.setMidDb(p.midDb);
-    engine.setTrebleDb(p.trebleDb);
-    engine.setMasterDb(p.masterDb);
-  };
-
-  const currentPresetObject: PreampPreset = {
-    id: currentPresetId,
-    name: FACTORY_PRESETS.find((p) => p.id === currentPresetId)?.name || 'Custom Tone',
-    description: 'Custom user tone setting.',
-    mode: tubeMode,
-    drive,
-    trimDb,
-    bassDb,
-    midDb,
-    trebleDb,
-    masterDb,
-  };
+  const selectedTrack = tracks.find((t) => t.id === selectedTrackId);
+  const activePluginTrack = tracks.find((t) => t.id === activePluginTrackId);
 
   return (
-    <div className="min-h-screen bg-sonar-bg text-slate-100 flex flex-col justify-between select-none">
-      {/* Cakewalk Sonar Control Bar (Top) */}
-      <SonarControlBar
+    <div className="h-screen flex flex-col bg-[#14161c] text-slate-100 select-none overflow-hidden font-sans">
+      {/* 1. Top Control Panel (Basic working controls) */}
+      <ControlPanel
         isPlaying={isPlaying}
         isRecording={isRecording}
         isLooping={isLooping}
-        isEngineActive={isEngineActive}
-        bpm={110}
         timecode={timecode}
         measureBeatTick={measureBeatTick}
         onPlay={handlePlay}
@@ -210,112 +253,62 @@ export function App() {
           setIsLooping(next);
           engine.isLooping = next;
         }}
-        onEngineToggle={handleEngineToggle}
+        onAddTrack={handleAddTrack}
+        onRemoveSelectedTrack={() => handleRemoveTrack()}
+        selectedTrackName={selectedTrack?.name}
       />
 
-      {/* Main Workspace (Skylight View: ProChannel on Left + Track View on Right) */}
-      <main className="p-3 space-y-3 flex-1 flex flex-col">
-        <div className="flex-1 flex flex-col lg:flex-row gap-3">
-          {/* Left Pane: Inspector / ProChannel */}
-          <ProChannel
-            tubeMode={tubeMode}
-            drive={drive}
-            trimDb={trimDb}
-            bassDb={bassDb}
-            midDb={midDb}
-            trebleDb={trebleDb}
-            pan={pan}
-            onModeChange={(m) => {
-              setTubeMode(m);
-              engine.setDrive(drive, m);
-              setCurrentPresetId('custom');
-            }}
-            onDriveChange={(d) => {
-              setDrive(d);
-              engine.setDrive(d, tubeMode);
-              setCurrentPresetId('custom');
-            }}
-            onTrimChange={(t) => {
-              setTrimDb(t);
-              engine.setTrimDb(t);
-              setCurrentPresetId('custom');
-            }}
-            onBassChange={(b) => {
-              setBassDb(b);
-              engine.setBassDb(b);
-              setCurrentPresetId('custom');
-            }}
-            onMidChange={(m) => {
-              setMidDb(m);
-              engine.setMidDb(m);
-              setCurrentPresetId('custom');
-            }}
-            onTrebleChange={(tr) => {
-              setTrebleDb(tr);
-              engine.setTrebleDb(tr);
-              setCurrentPresetId('custom');
-            }}
-            onPanChange={setPan}
-          />
+      {/* 2. Track Navigator */}
+      <TrackNavigator
+        tracks={tracks}
+        selectedTrackId={selectedTrackId}
+        playheadPosition={playheadPos}
+        onSelectTrack={(id) => setSelectedTrackId(id)}
+      />
 
-          {/* Right Pane: Track View & Clips Grid */}
-          <TrackView
-            inputSource={inputSource}
-            channelVol={channelVol}
-            isMuted={isMuted}
-            isSolo={isSolo}
-            isArmed={isArmed}
-            isInputEcho={isInputEcho}
-            isPlaying={isPlaying}
-            playheadPosition={playheadPos}
-            onSourceChange={handleSourceChange}
-            onFileUpload={handleFileUpload}
-            onChannelVolChange={(v) => {
-              setChannelVol(v);
-              engine.setChannelVolume(v);
-            }}
-            onMuteToggle={() => {
-              const next = !isMuted;
-              setIsMuted(next);
-              engine.setMute(next);
-            }}
-            onSoloToggle={() => setIsSolo(!isSolo)}
-            onArmToggle={() => setIsArmed(!isArmed)}
-            onInputEchoToggle={() => setIsInputEcho(!isInputEcho)}
-          />
+      {/* 3. Main Workspace: Track List on Left, Track Views / Timeline on Right */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Track List (Left Pane) */}
+        <div className="w-[33rem] flex flex-col overflow-y-auto border-r border-[#2d323e] bg-[#1a1c24] shrink-0">
+          {tracks.map((track) => (
+            <TrackItem
+              key={track.id}
+              track={track}
+              isSelected={track.id === selectedTrackId}
+              onSelectTrack={() => setSelectedTrackId(track.id)}
+              onUpdateTrack={(updated) => handleUpdateTrack(track.id, updated)}
+              onRemoveTrack={() => handleRemoveTrack(track.id)}
+              onOpenAmpPlugin={() => setActivePluginTrackId(track.id)}
+            />
+          ))}
         </div>
 
-        {/* Bottom Pane: Master Console Bus & Spectrum Analyzer */}
-        <MasterConsole
-          analyser={engine.analyser}
-          isPlaying={isPlaying}
-          masterDb={masterDb}
-          meterLevels={meterLevels}
-          currentPresetId={currentPresetId}
-          currentPreset={currentPresetObject}
-          onMasterDbChange={(db) => {
-            setMasterDb(db);
-            engine.setMasterDb(db);
+        {/* Track Views / Clips Timeline (Right Pane) */}
+        <TrackTimeline
+          tracks={tracks}
+          selectedTrackId={selectedTrackId}
+          playheadPosition={playheadPos}
+          onSeek={(pct) => {
+            // Reposition playhead
+            setPlayheadPos(pct);
           }}
-          onSelectPreset={handleSelectPreset}
         />
-      </main>
+      </div>
 
-      {/* Professional DAW Status Bar (Bottom) */}
-      <footer className="bg-[#0f1117] border-t border-sonar-panelBorder px-3 py-1 flex items-center justify-between text-[10px] font-mono text-slate-400">
-        <div className="flex items-center space-x-3">
-          <span className="text-slate-300 font-bold">SONAR WEB v1.0</span>
-          <span>•</span>
-          <span>Core: Web Audio Engine (48.0 kHz 32-bit Float)</span>
-          <span>•</span>
-          <span className="text-sonar-accent">ASIO Emulation Active</span>
-        </div>
-        <div className="flex items-center space-x-3">
-          <span>Buffer: 256 samples</span>
-          <span>•</span>
-          <span>Latency: ~5.3 ms</span>
-        </div>
-      </footer>
+      {/* 4. Guitar Amp Plugin Window (Opens when clicked from a track's FX rack) */}
+      {activePluginTrack && (
+        <GuitarAmpPlugin
+          track={activePluginTrack}
+          onClose={() => setActivePluginTrackId(null)}
+          onUpdateSettings={(settings) =>
+            handleUpdateTrack(activePluginTrack.id, { ampSettings: settings })
+          }
+          onRemovePlugin={() => {
+            handleUpdateTrack(activePluginTrack.id, { hasAmpPlugin: false });
+            setActivePluginTrackId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
