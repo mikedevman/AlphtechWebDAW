@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { ControlPanel } from './components/ControlPanel';
-import { TrackNavigator } from './components/TrackNavigator';
 import { TrackItem } from './components/TrackItem';
 import { TrackTimeline } from './components/TrackTimeline';
 import { GuitarAmpPlugin } from './components/GuitarAmpPlugin';
@@ -258,15 +257,7 @@ export function App() {
         selectedTrackName={selectedTrack?.name}
       />
 
-      {/* 2. Track Navigator */}
-      <TrackNavigator
-        tracks={tracks}
-        selectedTrackId={selectedTrackId}
-        playheadPosition={playheadPos}
-        onSelectTrack={(id) => setSelectedTrackId(id)}
-      />
-
-      {/* 3. Main Workspace: Track List on Left, Track Views / Timeline on Right */}
+      {/* 2. Main Workspace: Track List on Left, Track Views / Timeline on Right */}
       <div className="flex-1 flex overflow-hidden">
         {/* Track List (Left Pane) */}
         <div className="w-[33rem] flex flex-col overflow-y-auto border-r border-[#2d323e] bg-[#1a1c24] shrink-0">

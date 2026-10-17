@@ -142,8 +142,7 @@ export const TrackItem: React.FC<TrackItemProps> = ({
       </div>
 
       {/* 2. Track State Buttons: M, S, Arm, Echo (Center) */}
-      <div className="w-24 p-2 flex flex-col justify-between border-r border-[#2d323e] shrink-0">
-        {/* Row 1: M, S, Arm, Echo */}
+      <div className="w-24 p-2 flex flex-col justify-center border-r border-[#2d323e] shrink-0">
         <div className="grid grid-cols-4 gap-1">
           {/* [M] Mute */}
           <button
@@ -208,14 +207,6 @@ export const TrackItem: React.FC<TrackItemProps> = ({
           >
             <Headphones className="w-2.5 h-2.5 stroke-[2.5]" />
           </button>
-        </div>
-
-        {/* Row 2: Automation/Helper buttons (R, W, *, A) */}
-        <div className="grid grid-cols-4 gap-1 text-[9px] font-mono text-slate-500">
-          <div className="w-5 h-5 bg-[#15171e] rounded flex items-center justify-center">R</div>
-          <div className="w-5 h-5 bg-[#15171e] rounded flex items-center justify-center">W</div>
-          <div className="w-5 h-5 bg-[#15171e] rounded flex items-center justify-center">*</div>
-          <div className="w-5 h-5 bg-[#15171e] rounded flex items-center justify-center">A</div>
         </div>
       </div>
 
