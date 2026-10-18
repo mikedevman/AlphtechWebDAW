@@ -102,12 +102,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </button>
 
         {/* Position & Timecode Display */}
-        <div className="h-6 w-[1px] bg-[#2a2e38] mx-1.5" />
+        <div className="h-6 w-[1px] bg-[#2a2e38] mx-2" />
 
-        <div className="flex items-center space-x-2 font-mono text-xs px-2 py-0.5 bg-[#0a0b0e] rounded border border-[#232730]">
-          <span className="text-[#ff7700] font-bold">{measureBeatTick}</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-300">{timecode}</span>
+        <div className="flex items-center gap-2.5 font-mono text-[13px] px-3 py-1 bg-[#07080b] rounded border border-[#232732] shadow-inner select-none">
+          <span className="text-[#ff7700] font-bold tracking-wider tabular-nums">
+            {measureBeatTick}
+          </span>
+          <span className="text-[#3b4252] font-light">|</span>
+          <span className="text-slate-200 font-semibold tracking-wider tabular-nums">
+            {timecode}
+          </span>
         </div>
       </div>
 
