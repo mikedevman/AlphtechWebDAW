@@ -276,7 +276,13 @@ export function App() {
                   const arrayBuffer = await file.arrayBuffer();
                   const decoded = await engine.ctx.decodeAudioData(arrayBuffer);
                   engine.userFileBuffers.set(track.id, decoded);
-                  handleUpdateTrack(track.id, { inputSource: 'audio-file' });
+                  handleUpdateTrack(track.id, {
+                    inputSource: 'audio-file',
+                    audioClip: {
+                      name: file.name,
+                      duration: decoded.duration,
+                    },
+                  });
                 }
               }}
             />

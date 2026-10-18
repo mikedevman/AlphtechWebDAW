@@ -29,6 +29,10 @@ export interface TrackData {
   hasAmpPlugin: boolean;
   ampSettings: TrackAmpSettings;
   meterDb: number;
+  audioClip?: {
+    name: string;
+    duration: number;
+  };
 }
 
 export class DawAudioEngine {

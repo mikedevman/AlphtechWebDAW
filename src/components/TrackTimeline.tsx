@@ -64,15 +64,13 @@ export const TrackTimeline: React.FC<TrackTimelineProps> = ({
                 ))}
               </div>
 
-              {/* Clip Box */}
-              {hasAudio && (
+              {/* Clip Box - Only shown when audio clip is loaded/recorded */}
+              {track.audioClip && (
                 <div className="w-[85%] h-20 bg-gradient-to-r from-[#1c2330] via-[#161d28] to-[#121620] border border-[#ff7700]/40 rounded p-2 flex flex-col justify-between shadow-md relative overflow-hidden z-10">
                   <div className="flex items-center justify-between text-[10px] font-mono text-slate-300">
                     <span className="font-bold text-[#ff8400] flex items-center gap-1 truncate">
                       <Music className="w-3 h-3" />
-                      {track.inputSource === 'audio-input'
-                        ? `${track.name}_Audio_Input.wav`
-                        : `${track.name}_Audio_File.wav`}
+                      {track.audioClip.name}
                     </span>
                     <span className="text-slate-500 text-[9px]">48kHz 24-bit</span>
                   </div>
@@ -94,7 +92,9 @@ export const TrackTimeline: React.FC<TrackTimelineProps> = ({
                   </div>
 
                   <div className="text-[9px] font-mono text-slate-500 flex justify-between">
-                    <span>Length: 00:06.000</span>
+                    <span>
+                      Length: 00:0{Math.min(9, Math.round(track.audioClip.duration))}.000
+                    </span>
                     {track.hasAmpPlugin && (
                       <span className="text-emerald-400 font-semibold">Amp DSP Active</span>
                     )}
