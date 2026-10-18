@@ -29,13 +29,6 @@ export const TrackTimeline: React.FC<TrackTimelineProps> = ({
         onClick={handleTimelineClick}
         className="h-7 bg-[#1c1f26] border-b border-[#374151] flex cursor-pointer relative shrink-0 select-none overflow-hidden"
       >
-        {/* Left top marker handle */}
-        <div className="absolute left-0 top-0 z-20 flex flex-col items-center">
-          <div className="w-2.5 h-2 bg-[#4b5563] border border-[#374151] rounded-b-[2px] flex items-center justify-center shadow-sm">
-            <span className="w-1 h-1 bg-[#9ca3af] rounded-[1px]" />
-          </div>
-        </div>
-
         {/* Ruler measures */}
         <div className="flex-1 flex relative h-full">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => (
