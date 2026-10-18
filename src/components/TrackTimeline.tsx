@@ -24,31 +24,49 @@ export const TrackTimeline: React.FC<TrackTimelineProps> = ({
 
   return (
     <div className="flex-1 bg-[#12141a] flex flex-col overflow-x-auto select-none relative">
-      {/* Measure Ruler Bar (Header) */}
+      {/* Measure Ruler Bar (Header) - Matching Cakewalk Sonar style */}
       <div
         onClick={handleTimelineClick}
-        className="h-7 bg-[#0e1014] border-b border-[#2d323e] flex text-[10px] font-mono text-slate-500 cursor-pointer relative shrink-0"
+        className="h-7 bg-[#1c1f26] border-b border-[#374151] flex cursor-pointer relative shrink-0 select-none overflow-hidden"
       >
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => (
-          <div
-            key={bar}
-            className="flex-1 border-r border-[#222630] px-1.5 flex items-center justify-between"
-          >
-            <span className="font-bold text-slate-400">{bar}</span>
-            <div className="flex space-x-1.5 text-slate-600 text-[8px]">
-              <span>.2</span>
-              <span>.3</span>
-              <span>.4</span>
-            </div>
+        {/* Left top marker handle */}
+        <div className="absolute left-0 top-0 z-20 flex flex-col items-center">
+          <div className="w-2.5 h-2 bg-[#4b5563] border border-[#374151] rounded-b-[2px] flex items-center justify-center shadow-sm">
+            <span className="w-1 h-1 bg-[#9ca3af] rounded-[1px]" />
           </div>
-        ))}
+        </div>
+
+        {/* Ruler measures */}
+        <div className="flex-1 flex relative h-full">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => (
+            <div key={bar} className="flex-1 relative h-full border-b border-[#94a3b8]/70">
+              {/* Major Measure Tick (Beat 1) */}
+              <div className="absolute left-0 bottom-0 w-[1px] h-3.5 bg-[#cbd5e1]" />
+
+              {/* Measure Number in Blue */}
+              <span className="absolute left-1 top-0.5 text-[11px] font-mono font-medium text-[#38bdf8] leading-none">
+                {bar}
+              </span>
+
+              {/* Sub-beat 2 tick */}
+              <div className="absolute left-[25%] bottom-0 w-[1px] h-1.5 bg-[#94a3b8]" />
+
+              {/* Sub-beat 3 tick */}
+              <div className="absolute left-[50%] bottom-0 w-[1px] h-2 bg-[#94a3b8]" />
+
+              {/* Sub-beat 4 tick */}
+              <div className="absolute left-[75%] bottom-0 w-[1px] h-1.5 bg-[#94a3b8]" />
+            </div>
+          ))}
+          {/* Final end tick */}
+          <div className="w-[1px] h-3.5 bg-[#cbd5e1] absolute right-0 bottom-0" />
+        </div>
       </div>
 
       {/* Track Lanes Rows */}
       <div onClick={handleTimelineClick} className="flex-1 flex flex-col relative cursor-pointer">
         {tracks.map((track) => {
           const isSelected = track.id === selectedTrackId;
-          const hasAudio = track.inputSource !== 'none';
 
           return (
             <div
@@ -57,10 +75,10 @@ export const TrackTimeline: React.FC<TrackTimelineProps> = ({
                 isSelected ? 'bg-[#1a1e27]/50' : 'hover:bg-[#161820]'
               }`}
             >
-              {/* Vertical Measure Grid Lines */}
+              {/* Vertical Measure Grid Lines aligned with major ticks */}
               <div className="absolute inset-0 flex pointer-events-none">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((b) => (
-                  <div key={b} className="flex-1 border-r border-[#1a1e28]/70" />
+                  <div key={b} className="flex-1 border-l border-[#262c3a]" />
                 ))}
               </div>
 
