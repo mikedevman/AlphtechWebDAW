@@ -22,7 +22,7 @@ const INITIAL_TRACKS: TrackData[] = [
     id: 'track-1',
     number: 1,
     name: 'Track 1',
-    inputSource: 'di-stem',
+    inputSource: 'audio-input',
     outputBus: 'Master',
     isMuted: false,
     isSolo: false,
@@ -37,7 +37,7 @@ const INITIAL_TRACKS: TrackData[] = [
     id: 'track-2',
     number: 2,
     name: 'Track 2',
-    inputSource: 'none',
+    inputSource: 'audio-input',
     outputBus: 'Master',
     isMuted: false,
     isSolo: false,
@@ -52,7 +52,7 @@ const INITIAL_TRACKS: TrackData[] = [
     id: 'track-3',
     number: 3,
     name: 'Track 3',
-    inputSource: 'none',
+    inputSource: 'audio-input',
     outputBus: 'Master',
     isMuted: false,
     isSolo: false,
@@ -67,7 +67,7 @@ const INITIAL_TRACKS: TrackData[] = [
     id: 'track-4',
     number: 4,
     name: 'Track 4',
-    inputSource: 'none',
+    inputSource: 'audio-input',
     outputBus: 'Master',
     isMuted: false,
     isSolo: false,
@@ -185,7 +185,7 @@ export function App() {
       id: `track-${Date.now()}`,
       number: nextNumber,
       name: `Track ${nextNumber}`,
-      inputSource: 'none',
+      inputSource: 'audio-input',
       outputBus: 'Master',
       isMuted: false,
       isSolo: false,
@@ -270,6 +270,15 @@ export function App() {
               onUpdateTrack={(updated) => handleUpdateTrack(track.id, updated)}
               onRemoveTrack={() => handleRemoveTrack(track.id)}
               onOpenAmpPlugin={() => setActivePluginTrackId(track.id)}
+              onFileUpload={async (file) => {
+                await engine.initAudio();
+                if (engine.ctx) {
+                  const arrayBuffer = await file.arrayBuffer();
+                  const decoded = await engine.ctx.decodeAudioData(arrayBuffer);
+                  engine.userFileBuffers.set(track.id, decoded);
+                  handleUpdateTrack(track.id, { inputSource: 'audio-file' });
+                }
+              }}
             />
           ))}
         </div>

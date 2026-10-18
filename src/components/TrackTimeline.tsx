@@ -70,9 +70,9 @@ export const TrackTimeline: React.FC<TrackTimelineProps> = ({
                   <div className="flex items-center justify-between text-[10px] font-mono text-slate-300">
                     <span className="font-bold text-[#ff8400] flex items-center gap-1 truncate">
                       <Music className="w-3 h-3" />
-                      {track.inputSource === 'hardware-interface'
-                        ? 'Hardware_Guitar_DI.wav'
-                        : `${track.name}_Clean_DI.wav`}
+                      {track.inputSource === 'audio-input'
+                        ? `${track.name}_Audio_Input.wav`
+                        : `${track.name}_Audio_File.wav`}
                     </span>
                     <span className="text-slate-500 text-[9px]">48kHz 24-bit</span>
                   </div>

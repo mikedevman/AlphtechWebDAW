@@ -2,7 +2,7 @@ import { TubeShaper } from './TubeShaper';
 import type { TubeMode } from './TubeShaper';
 import { GuitarSynth } from './GuitarSynth';
 
-export type InputSourceType = 'none' | 'di-stem' | 'hardware-interface' | 'audio-file';
+export type InputSourceType = 'audio-input' | 'audio-file';
 
 export interface TrackAmpSettings {
   enabled: boolean;
@@ -236,16 +236,31 @@ export class DawAudioEngine {
         nodes.trackGain.gain.value = track.volume;
       }
 
-      if (track.inputSource === 'hardware-interface') {
+      if (track.inputSource === 'audio-input') {
         if (!nodes.sourceNode && track.isInputEcho) {
-          await this.setTrackHardwareInput(track);
+          try {
+            await this.setTrackHardwareInput(track);
+          } catch {
+            // Fallback to guitar loop if microphone not granted
+            if (this.diBuffer) {
+              const source = this.ctx.createBufferSource();
+              source.buffer = this.diBuffer;
+              source.loop = this.isLooping;
+              source.connect(nodes.inputTrim);
+              source.start(0);
+              nodes.sourceNode = source;
+            }
+          }
+        } else if (!nodes.sourceNode && this.diBuffer) {
+          const source = this.ctx.createBufferSource();
+          source.buffer = this.diBuffer;
+          source.loop = this.isLooping;
+          source.connect(nodes.inputTrim);
+          source.start(0);
+          nodes.sourceNode = source;
         }
-      } else if (track.inputSource === 'di-stem' || track.inputSource === 'audio-file') {
-        const buffer =
-          track.inputSource === 'audio-file'
-            ? this.userFileBuffers.get(track.id) || this.diBuffer
-            : this.diBuffer;
-
+      } else if (track.inputSource === 'audio-file') {
+        const buffer = this.userFileBuffers.get(track.id) || this.diBuffer;
         if (buffer) {
           const source = this.ctx.createBufferSource();
           source.buffer = buffer;

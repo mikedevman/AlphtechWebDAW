@@ -19,6 +19,7 @@ interface TrackItemProps {
   onUpdateTrack: (updated: Partial<TrackData>) => void;
   onRemoveTrack: () => void;
   onOpenAmpPlugin: () => void;
+  onFileUpload: (file: File) => void;
 }
 
 export const TrackItem: React.FC<TrackItemProps> = ({
@@ -28,10 +29,18 @@ export const TrackItem: React.FC<TrackItemProps> = ({
   onUpdateTrack,
   onRemoveTrack,
   onOpenAmpPlugin,
+  onFileUpload,
 }) => {
   const [isFxMenuOpen, setIsFxMenuOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(track.name);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      onFileUpload(e.target.files[0]);
+    }
+  };
 
   const handleNameBlur = () => {
     setIsEditingName(false);
@@ -115,22 +124,29 @@ export const TrackItem: React.FC<TrackItemProps> = ({
             <select
               value={track.inputSource}
               onClick={(e) => e.stopPropagation()}
-              onChange={(e) => onUpdateTrack({ inputSource: e.target.value as InputSourceType })}
+              onChange={(e) => {
+                const val = e.target.value as InputSourceType;
+                onUpdateTrack({ inputSource: val });
+                if (val === 'audio-file') {
+                  fileInputRef.current?.click();
+                }
+              }}
               className="bg-transparent text-slate-300 text-[10px] font-semibold focus:outline-none w-full cursor-pointer"
             >
-              <option value="none" className="bg-[#15171e] text-slate-400">
-                None
-              </option>
-              <option value="di-stem" className="bg-[#15171e] text-[#ff8400]">
-                Clean Guitar DI Loop
-              </option>
-              <option value="hardware-interface" className="bg-[#15171e] text-sky-400">
-                USB Interface / Guitar In
+              <option value="audio-input" className="bg-[#15171e] text-sky-400">
+                Audio Input
               </option>
               <option value="audio-file" className="bg-[#15171e] text-emerald-400">
                 Audio File
               </option>
             </select>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </div>
 
           {/* Output Selector */}
