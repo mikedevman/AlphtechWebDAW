@@ -92,8 +92,7 @@ export function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isLooping, setIsLooping] = useState(true);
-  const [timecode, setTimecode] = useState('00:00:00.00');
-  const [measureBeatTick, setMeasureBeatTick] = useState('001:01:000');
+  const [timecode, setTimecode] = useState('00:00:00');
   const [playheadPos, setPlayheadPos] = useState(0);
 
   const startTimeRef = useRef(0);
@@ -119,21 +118,13 @@ export function App() {
         // Playhead position percentage across timeline (0 to 85% matches audio clip)
         setPlayheadPos((currentLoopSec / loopDuration) * 85);
 
-        // SMPTE Timecode
-        const mins = Math.floor(elapsed / 60);
-        const secs = Math.floor(elapsed % 60);
-        const ms = Math.floor((elapsed * 100) % 100);
+        // Format as HH:MM:SS (00:00:00)
+        const totalSecs = Math.floor(elapsed);
+        const hrs = Math.floor(totalSecs / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+        const secs = totalSecs % 60;
         setTimecode(
-          `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`
-        );
-
-        // 110 BPM Measure : Beat : Tick
-        const beatsTotal = elapsed * (110 / 60);
-        const measure = Math.floor(beatsTotal / 4) + 1;
-        const beat = (Math.floor(beatsTotal) % 4) + 1;
-        const tickVal = Math.floor((beatsTotal % 1) * 960);
-        setMeasureBeatTick(
-          `${String(measure).padStart(3, '0')}:${String(beat).padStart(2, '0')}:${String(tickVal).padStart(3, '0')}`
+          `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
         );
       } else {
         setPlayheadPos(0);
@@ -168,8 +159,7 @@ export function App() {
   const handleStop = () => {
     engine.stopPlayback();
     setIsPlaying(false);
-    setTimecode('00:00:00.00');
-    setMeasureBeatTick('001:01:000');
+    setTimecode('00:00:00');
     setPlayheadPos(0);
   };
 
@@ -241,8 +231,8 @@ export function App() {
         isPlaying={isPlaying}
         isRecording={isRecording}
         isLooping={isLooping}
-        timecode={timecode}
-        measureBeatTick={measureBeatTick}
+        timeDisplay={timecode}
+        totalTimeDisplay="00:00:00"
         onPlay={handlePlay}
         onStop={handleStop}
         onRewind={handleRewind}
