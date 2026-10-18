@@ -244,27 +244,12 @@ export class DawAudioEngine {
         if (!nodes.sourceNode && track.isInputEcho) {
           try {
             await this.setTrackHardwareInput(track);
-          } catch {
-            // Fallback to guitar loop if microphone not granted
-            if (this.diBuffer) {
-              const source = this.ctx.createBufferSource();
-              source.buffer = this.diBuffer;
-              source.loop = this.isLooping;
-              source.connect(nodes.inputTrim);
-              source.start(0);
-              nodes.sourceNode = source;
-            }
+          } catch (e) {
+            console.warn('Microphone/Audio interface access not granted for track', track.id, e);
           }
-        } else if (!nodes.sourceNode && this.diBuffer) {
-          const source = this.ctx.createBufferSource();
-          source.buffer = this.diBuffer;
-          source.loop = this.isLooping;
-          source.connect(nodes.inputTrim);
-          source.start(0);
-          nodes.sourceNode = source;
         }
       } else if (track.inputSource === 'audio-file') {
-        const buffer = this.userFileBuffers.get(track.id) || this.diBuffer;
+        const buffer = this.userFileBuffers.get(track.id);
         if (buffer) {
           const source = this.ctx.createBufferSource();
           source.buffer = buffer;
